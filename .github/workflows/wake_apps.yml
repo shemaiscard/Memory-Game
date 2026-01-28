@@ -1,27 +1,33 @@
-name: Global App Keep-Alive
+
+name: Deep Wake Keep-Alive
 on:
   schedule:
-    - cron: '0 */12 * * *' # Runs exactly every 12 hours
-  workflow_dispatch:      # Allows you to click "Run workflow" manually in GitHub Actions
+    # Runs every 6 hours (4 times a day) to ensure the 12h timer never hits
+    - cron: '0 */6 * * *'
+  workflow_dispatch:      # Allows you to manual-start it to test
 
 jobs:
-  ping-apps:
+  heavy-ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Wake-up Pings
+      - name: Force Wake Streamlit Apps
         run: |
-          # Streamlit Apps
-          curl -s https://ze-video-downloader.streamlit.app > /dev/null
-          curl -s https://ze-matrix.streamlit.app > /dev/null
-          curl -s https://nmaptest.streamlit.app > /dev/null
-          curl -s https://ciphershield.streamlit.app > /dev/null
-          curl -s https://logoscope.streamlit.app > /dev/null
-          curl -s https://zequiz.streamlit.app > /dev/null
-          curl -s https://ze-base.streamlit.app > /dev/null
-          
-          # Netlify Apps (Optional but good to keep warm)
-          curl -s https://zarduino.netlify.app > /dev/null
-          curl -s https://amakarita.netlify.app > /dev/null
-          curl -s https://zememory.netlify.app > /dev/null
-          
-          echo "All portfolio projects pinged successfully at $(date)"
+          # Define your app list
+          APPS=(
+            "https://ze-video-downloader.streamlit.app"
+            "https://ze-matrix.streamlit.app"
+            "https://nmaptest.streamlit.app"
+            "https://ciphershield.streamlit.app"
+            "https://logoscope.streamlit.app"
+            "https://zequiz.streamlit.app"
+            "https://ze-base.streamlit.app"
+          )
+
+          for url in "${APPS[@]}"; do
+            echo "Waking up $url..."
+            # -L follows redirects
+            # -f fails on server error
+            # -A mimics a real Chrome browser on Windows
+            curl -L -f -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "$url" > /dev/null
+          done
+          echo "All apps pinged at $(date)"
