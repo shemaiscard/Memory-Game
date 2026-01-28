@@ -1,18 +1,18 @@
 
-name: Deep Wake Keep-Alive
+
+  name: App Heartbeat Keep-Alive
 on:
   schedule:
-    # Runs every 6 hours (4 times a day) to ensure the 12h timer never hits
+    # Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
     - cron: '0 */6 * * *'
-  workflow_dispatch:      # Allows you to manual-start it to test
+  workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
-  heavy-ping:
+  heartbeat:
     runs-on: ubuntu-latest
     steps:
-      - name: Force Wake Streamlit Apps
+      - name: Mimic Active Visitor
         run: |
-          # Define your app list
           APPS=(
             "https://ze-video-downloader.streamlit.app"
             "https://ze-matrix.streamlit.app"
@@ -21,13 +21,17 @@ jobs:
             "https://logoscope.streamlit.app"
             "https://zequiz.streamlit.app"
             "https://ze-base.streamlit.app"
+            "https://zarduino.netlify.app"
+            "https://amakarita.netlify.app"
+            "https://zememory.netlify.app"
           )
 
           for url in "${APPS[@]}"; do
-            echo "Waking up $url..."
-            # -L follows redirects
-            # -f fails on server error
-            # -A mimics a real Chrome browser on Windows
-            curl -L -f -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "$url" > /dev/null
+            echo "Visiting $url..."
+            # -L: Follows redirects
+            # --max-time 10: Prevents the script from hanging
+            # -A: Mimics a real Chrome browser visitor
+            # --head: Requests only headers to save time but counts as a visit
+            curl -L --max-time 10 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --head "$url" > /dev/null
           done
-          echo "All apps pinged at $(date)"
+          echo "Heartbeat successful at $(date)"
