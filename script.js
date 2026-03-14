@@ -203,23 +203,8 @@
          const cardElement = document.querySelector(`.card[data-id="${card.id}"]`);
          const scoreFloat = document.createElement('div');
          scoreFloat.textContent = `+${newPoints/2}`;
-         scoreFloat.style.position = 'absolute';
-         scoreFloat.style.color = '#ff6b6b';
-         scoreFloat.style.fontWeight = 'bold';
-         scoreFloat.style.fontSize = '1.2rem';
-         scoreFloat.style.zIndex = '10';
-         scoreFloat.style.animation = 'float-up 1s forwards';
-
-         // Add animation
-         const style = document.createElement('style');
-         style.textContent = `
-             @keyframes float-up {
-                 0% { opacity: 1; transform: translateY(0); }
-                 100% { opacity: 0; transform: translateY(-50px); }
-             }
-         `;
-         document.head.appendChild(style);
-
+         scoreFloat.className = 'score-float';
+         
          cardElement.appendChild(scoreFloat);
          setTimeout(() => scoreFloat.remove(), 1000);
      });
