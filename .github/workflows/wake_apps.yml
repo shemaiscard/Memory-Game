@@ -8,29 +8,40 @@ jobs:
   heartbeat:
     runs-on: ubuntu-latest
     steps:
-      - name: Mimic Real Browser Visit
+      - name: Install Playwright
         run: |
-          APPS=(
-            "https://ze-video-downloader.streamlit.app"
-            "https://ze-matrix.streamlit.app"
-            "https://nmaptest.streamlit.app"
-            "https://ciphershield.streamlit.app"
-            "https://logoscope.streamlit.app"
-            "https://zequiz.streamlit.app"
-            "https://ze-base.streamlit.app"
-          )
+          pip install playwright
+          playwright install chromium --with-deps
 
-          for url in "${APPS[@]}"; do
-            echo "Heartbeat for $url..."
-            # -b and -c handle cookies (Streamlit needs this)
-            # --max-redirs 5 prevents the infinite loop crash
-            # -sL runs it silently but follows redirects properly
-            curl -sL --max-redirs 5 --connect-timeout 10 \
-                 -b cookies.txt -c cookies.txt \
-                 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-                 "$url" > /dev/null
-            
-            # Clean up cookies for the next app
-            rm -f cookies.txt
-          done
-          echo "All heartbeats sent successfully."
+      - name: Wake Apps With Real Browser
+        run: |
+          python - <<'EOF'
+          from playwright.sync_api import sync_playwright
+          import time
+
+          APPS = [
+            "https://ze-video-downloader.streamlit.app",
+            "https://ze-matrix.streamlit.app",
+            "https://nmaptest.streamlit.app",
+            "https://ciphershield.streamlit.app",
+            "https://logoscope.streamlit.app",
+            "https://zequiz.streamlit.app",
+            "https://ze-base.streamlit.app",
+          ]
+
+          with sync_playwright() as p:
+            browser = p.chromium.launch()
+            for url in APPS:
+              print(f"Waking {url}...")
+              try:
+                page = browser.new_page()
+                page.goto(url, wait_until="networkidle", timeout=60000)
+                time.sleep(5)  # Let the app fully initialize
+                page.close()
+                print(f"  Done: {url}")
+              except Exception as e:
+                print(f"  Failed: {url} — {e}")
+            browser.close()
+          print("All heartbeats sent.")
+          EOF
+
