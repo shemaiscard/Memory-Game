@@ -26,6 +26,7 @@ jobs:
             "https://ciphershield.streamlit.app",
             "https://logoscope.streamlit.app",
             "https://zequiz.streamlit.app",
+            "https://digital-wallet.streamlit.app",
             "https://ze-base.streamlit.app",
           ]
 
