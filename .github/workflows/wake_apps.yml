@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Install Playwright
         run: |
-          pip install playwright
+          pip install playwright --break-system-packages
           playwright install chromium --with-deps
 
       - name: Wake Apps With Real Browser
@@ -37,7 +37,7 @@ jobs:
               print(f"Waking {url}...")
               try:
                 page = browser.new_page()
-                page.goto(url, wait_until="networkidle", timeout=60000)
+                page.goto(url, wait_until="domcontentloaded", timeout=60000)
                 time.sleep(5)  # Let the app fully initialize
                 page.close()
                 print(f"  Done: {url}")
