@@ -23,6 +23,7 @@ jobs:
             "https://ze-video-downloader.streamlit.app",
             "https://ze-matrix.streamlit.app",
             "https://nmaptest.streamlit.app",
+            "https://smart-room-iot.streamlit.app",
             "https://ciphershield.streamlit.app",
             "https://logoscope.streamlit.app",
             "https://zequiz.streamlit.app",
