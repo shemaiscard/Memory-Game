@@ -8,10 +8,28 @@ jobs:
   heartbeat:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Playwright
+      - name: Install Playwright CLI
+        run: pip install playwright --break-system-packages
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pip show playwright | grep Version | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Browsers & Deps
         run: |
-          pip install playwright --break-system-packages
-          playwright install chromium --with-deps
+          if [ "${{ steps.cache-playwright.outputs.cache-hit }}" != "true" ]; then
+            playwright install chromium --with-deps
+          else
+            playwright install-deps chromium
+          fi
+
 
       - name: Wake Apps With Real Browser
         env:
