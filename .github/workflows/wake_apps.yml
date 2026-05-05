@@ -14,36 +14,53 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Wake Apps With Real Browser
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           python - <<'EOF'
-          from playwright.sync_api import sync_playwright
+          import sys
           import time
+          from playwright.sync_api import sync_playwright
 
           APPS = [
-            "https://ze-video-downloader.streamlit.app",
-            "https://ze-matrix.streamlit.app",
-            "https://nmaptest.streamlit.app",
-            "https://smart-room-iot.streamlit.app",
-            "https://ciphershield.streamlit.app",
-            "https://logoscope.streamlit.app",
-            "https://zequiz.streamlit.app",
-            "https://digital-wallet.streamlit.app",
-            "https://ze-base.streamlit.app",
+              "https://ze-video-downloader.streamlit.app",
+              "https://ze-matrix.streamlit.app",
+              "https://nmaptest.streamlit.app",
+              "https://smart-room-iot.streamlit.app",
+              "https://ciphershield.streamlit.app",
+              "https://logoscope.streamlit.app",
+              "https://zequiz.streamlit.app",
+              "https://digital-wallet.streamlit.app",
+              "https://ze-base.streamlit.app",
           ]
 
-          with sync_playwright() as p:
-            browser = p.chromium.launch()
-            for url in APPS:
-              print(f"Waking {url}...")
-              try:
-                page = browser.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                time.sleep(5)  # Let the app fully initialize
-                page.close()
-                print(f"  Done: {url}")
-              except Exception as e:
-                print(f"  Failed: {url} — {e}")
-            browser.close()
-          print("All heartbeats sent.")
+          print(f"Starting heartbeat for {len(APPS)} apps...", flush=True)
+
+          try:
+              with sync_playwright() as p:
+                  browser = p.chromium.launch(headless=True)
+                  for url in APPS:
+                      print(f"Waking {url}...", flush=True)
+                      start_time = time.time()
+                      try:
+                          context = browser.new_context()
+                          page = context.new_page()
+                          # Wait for domcontentloaded, but also add a per-page timeout
+                          page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                          time.sleep(5)  # Let the app fully initialize
+                          page.close()
+                          context.close()
+                          elapsed = time.time() - start_time
+                          print(f"  Done: {url} ({elapsed:.2f}s)", flush=True)
+                      except Exception as e:
+                          elapsed = time.time() - start_time
+                          print(f"  Failed: {url} after {elapsed:.2f}s — {type(e).__name__}: {e}", flush=True)
+                  browser.close()
+          except Exception as e:
+              print(f"FATAL: Browser error — {e}", flush=True)
+              sys.exit(1)
+
+          print("All heartbeats processed.", flush=True)
           EOF
+
 
