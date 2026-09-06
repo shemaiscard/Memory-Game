@@ -1,0 +1,91 @@
+name: Bulletproof App Heartbeat
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright CLI
+        run: pip install playwright
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pip show playwright | grep Version | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Browsers & Deps
+        run: |
+          if [ "${{ steps.cache-playwright.outputs.cache-hit }}" != "true" ]; then
+            playwright install chromium --with-deps
+          else
+            playwright install-deps chromium
+          fi
+
+      - name: Wake Apps With Real Browser
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python - <<'EOF'
+          import sys
+          import time
+          from playwright.sync_api import sync_playwright
+
+          APPS = [
+              "https://ze-video-downloader.streamlit.app",
+              "https://ze-matrix.streamlit.app",
+              "https://nmaptest.streamlit.app",
+              "https://smart-room-iot.streamlit.app",
+              "https://ciphershield.streamlit.app",
+              "https://logoscope.streamlit.app",
+              "https://zequiz.streamlit.app",
+              "https://digital-wallet.streamlit.app",
+              "https://ze-base.streamlit.app",
+          ]
+
+          print(f"Starting heartbeat for {len(APPS)} apps...", flush=True)
+
+          success_count = 0
+          try:
+              with sync_playwright() as p:
+                  browser = p.chromium.launch(headless=True)
+                  for url in APPS:
+                      print(f"Waking {url}...", flush=True)
+                      start_time = time.time()
+                      try:
+                          context = browser.new_context()
+                          page = context.new_page()
+                          page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                          time.sleep(5)  # Let app initialize
+                          page.close()
+                          context.close()
+                          elapsed = time.time() - start_time
+                          print(f"  Done: {url} ({elapsed:.2f}s)", flush=True)
+                          success_count += 1
+                      except Exception as e:
+                          elapsed = time.time() - start_time
+                          print(f"  Failed: {url} after {elapsed:.2f}s — {type(e).__name__}: {e}", flush=True)
+                  browser.close()
+          except Exception as e:
+              print(f"FATAL: Browser error — {e}", flush=True)
+              sys.exit(1)
+
+          print(f"All heartbeats processed ({success_count}/{len(APPS)} successful).", flush=True)
+          EOF
