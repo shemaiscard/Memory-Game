@@ -2,18 +2,28 @@ name: Bulletproof App Heartbeat
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    # Streamlit puts an app to sleep after 12 hours without visitors, and GitHub
+    # often starts scheduled runs hours late, so check every 3 hours.
+    - cron: '17 */3 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-heartbeat
+  cancel-in-progress: false
 
 jobs:
   heartbeat:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -26,7 +36,7 @@ jobs:
 
       - name: Cache Playwright Browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
@@ -42,50 +52,13 @@ jobs:
       - name: Wake Apps With Real Browser
         env:
           PYTHONUNBUFFERED: "1"
-        run: |
-          python - <<'EOF'
-          import sys
-          import time
-          from playwright.sync_api import sync_playwright
+        run: python .github/scripts/wake_streamlit_apps.py
 
-          APPS = [
-              "https://ze-video-downloader.streamlit.app",
-              "https://ze-matrix.streamlit.app",
-              "https://nmaptest.streamlit.app",
-              "https://smart-room-iot.streamlit.app",
-              "https://ciphershield.streamlit.app",
-              "https://logoscope.streamlit.app",
-              "https://zequiz.streamlit.app",
-              "https://digital-wallet.streamlit.app",
-              "https://ze-base.streamlit.app",
-          ]
-
-          print(f"Starting heartbeat for {len(APPS)} apps...", flush=True)
-
-          success_count = 0
-          try:
-              with sync_playwright() as p:
-                  browser = p.chromium.launch(headless=True)
-                  for url in APPS:
-                      print(f"Waking {url}...", flush=True)
-                      start_time = time.time()
-                      try:
-                          context = browser.new_context()
-                          page = context.new_page()
-                          page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                          time.sleep(5)  # Let app initialize
-                          page.close()
-                          context.close()
-                          elapsed = time.time() - start_time
-                          print(f"  Done: {url} ({elapsed:.2f}s)", flush=True)
-                          success_count += 1
-                      except Exception as e:
-                          elapsed = time.time() - start_time
-                          print(f"  Failed: {url} after {elapsed:.2f}s — {type(e).__name__}: {e}", flush=True)
-                  browser.close()
-          except Exception as e:
-              print(f"FATAL: Browser error — {e}", flush=True)
-              sys.exit(1)
-
-          print(f"All heartbeats processed ({success_count}/{len(APPS)} successful).", flush=True)
-          EOF
+      - name: Upload Screenshots Of Apps That Did Not Start
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: heartbeat-screenshots
+          path: heartbeat-screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
