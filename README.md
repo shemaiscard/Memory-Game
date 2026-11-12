@@ -1,27 +1,39 @@
 # Memory Match Challenge
 
-**Live Demo:** [zememory.netlify.app](https://zememory.netlify.app)
+**Play it:** [zememory.netlify.app](https://zememory.netlify.app)
 
-A cognitive recall browser game with 3D card flips, dynamic difficulty levels, and local leaderboard persistence. Built with pure vanilla JavaScript, HTML5, and CSS3.
+A card-matching memory game with 3D flips, three difficulty levels and a local leaderboard. Plain JavaScript, HTML and CSS, no framework.
 
 ## Features
 
-- **Difficulty Modes**: Easy (12 cards), Medium (16 cards), Hard (20 cards)
-- **3D Card Flips**: CSS `preserve-3d` and `backface-visibility` for smooth hardware-accelerated animations
-- **Scoring**: Points calculated from difficulty multiplier, move count, and time bonus
-- **Leaderboard**: Top 5 scores stored in `localStorage` — private to your device, nothing uploaded
-- **Hint System**: Limited-use helper that briefly reveals an unmatched pair
-- **Responsive**: Scales from 4 columns on desktop down to 2 on mobile
+- **Difficulty:** Easy (6 pairs), Medium (8 pairs), Hard (10 pairs). Harder levels also shorten the hint reveal.
+- **3D card flips:** CSS `preserve-3d` and `backface-visibility`.
+- **Scoring:** a difficulty multiplier, your move count and a time bonus.
+- **Hints:** two per game. A hint briefly shows one unmatched pair.
+- **Leaderboard:** the top 5 scores stay in `localStorage` on your device. Nothing is uploaded.
+- **Responsive board:** a CSS Grid that goes from 4 columns on desktop to 2 on phones.
+- **Installable:** works offline as a PWA.
 
-## Technical Highlights
+The deck is shuffled with Fisher-Yates, and card clicks go through one delegated event listener.
 
-- **Fisher-Yates Shuffle**: Unbiased card randomization each session
-- **Event Delegation**: Efficient card interaction management
-- **CSS Grid**: Dynamic board layout adjusts per difficulty
+## Tech stack
 
-## Run Locally
+| Part | Technology |
+| --- | --- |
+| Language | Vanilla JavaScript |
+| Layout and effects | HTML5, CSS3 Grid, CSS 3D transforms |
+| Storage | Local Storage |
+| App | PWA (manifest and service worker) |
+| Hosting | Netlify |
 
-Open `index.html` in any modern browser. No server or installation required.
+## Also in this repo: app heartbeat
+
+`.github/workflows/wake_apps.yml` is a separate GitHub Actions job. Every 3 hours it opens my Streamlit apps with Playwright, because Streamlit Community Cloud puts an app to sleep after 12 hours without visitors. It is not part of the game.
+
+## Run locally
+
+Open `index.html` in a modern browser. No install needed.
 
 ## License
-MIT License — v1.0.0 — Developed by Giscard
+
+MIT License
