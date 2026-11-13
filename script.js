@@ -70,7 +70,7 @@
  // Generate cards
  function generateCards() {
      const pairs = difficultyConfig[difficulty].pairs;
-     const symbols = [...cardSymbols].sort(() => Math.random() - 0.5).slice(0, pairs);
+     const symbols = shuffle([...cardSymbols]).slice(0, pairs);
 
      // Create pairs
      cards = [...symbols, ...symbols].map((symbol, index) => ({
@@ -81,7 +81,16 @@
      }));
 
      // Shuffle cards
-     cards.sort(() => Math.random() - 0.5);
+     shuffle(cards);
+ }
+
+ // Fisher-Yates: every order is equally likely, unlike sort(() => Math.random() - 0.5)
+ function shuffle(arr) {
+     for (let i = arr.length - 1; i > 0; i--) {
+         const j = Math.floor(Math.random() * (i + 1));
+         [arr[i], arr[j]] = [arr[j], arr[i]];
+     }
+     return arr;
  }
 
  // Render cards
